@@ -33,6 +33,10 @@ public class CouchbaseAccess extends HttpServlet
 	public Boolean foundTimeMatch = false;
 	
 	public String predictionRider = "";
+	
+	public Boolean furtherResponsesRequired = true;
+	
+	public String questionParameterValue = "";
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -45,6 +49,7 @@ public class CouchbaseAccess extends HttpServlet
 	@SuppressWarnings("deprecation")
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		System.out.println("Request received.....handling a POST now.");
+		furtherResponsesRequired = true;
 		
     	Cluster cluster = CouchbaseCluster.create("localhost");
     	cluster.authenticate("Administrator", "password");
@@ -58,7 +63,7 @@ public class CouchbaseAccess extends HttpServlet
         //bucket.upsert(RawJsonDocument.create("metOffice0001", returnedJsonDocument));
         bucket.bucketManager().createN1qlPrimaryIndex(true, false);
 
-        String questionParameterValue = request.getParameter("question");
+        questionParameterValue = request.getParameter("question");
 
 		Bucket weatherAttributesBucket = cluster.openBucket("weatherAttributes");
 		
@@ -73,7 +78,8 @@ public class CouchbaseAccess extends HttpServlet
 		JsonObject weatherAttributeTokenCharacteristics = retrievedWeatherTokenArray.getObject(1);
 		
 		if (weatherMatchResult.equals("No match found")) {	
-        	//response.getWriter().write("No weather match found.");
+        	response.getWriter().write("No weather match found.");
+        	furtherResponsesRequired = false;
 			
 			System.out.println("No weather match found.");
 			
@@ -81,6 +87,7 @@ public class CouchbaseAccess extends HttpServlet
         	
 		} else {
 			foundWeatherMatch = true;
+			furtherResponsesRequired = true;
 			
 			TimeMatcher myTimeMatcher = new TimeMatcher();
 			JsonArray myJsonArray = myTimeMatcher.MatchTime(questionParameterValue, cluster, weatherAttributesBucket);
@@ -88,7 +95,8 @@ public class CouchbaseAccess extends HttpServlet
 			String foundTimeToken = myJsonArray.getString(0);
 			
 			if (foundTimeToken.equals("No match found")) {
-				//response.getWriter().write("I didn't understand the time you gave me.");
+				response.getWriter().write("I didn't understand the time you gave me.");
+				furtherResponsesRequired = false;
 				
 				// QUESTION: SHALL WE DEFAULT TO 'TODAY' AND CARRY ON?
 				
@@ -109,11 +117,20 @@ public class CouchbaseAccess extends HttpServlet
 				
 				int highestPpValueFound = deriveHighestPp(timeAttributesObject, userSpecifiedDate, bucket);
 				
+				if (highestPpValueFound == 500){
+					//response.getWriter().write("Sorry, I didn't understand that.");
+					response.getWriter().write("No precipitation value found. Sorry.");
+					furtherResponsesRequired = false;
+				}
+				
 				Verbalizer myVerbalizer = new Verbalizer();
 		        latestPrediction = myVerbalizer.verbalizeLikelihoodOfRain(highestPpValueFound); 
 		        
 		        predictionRider = "";
 		        
+		        System.out.println("In CA: deriveDayFromWording, foundTimeToken value going in is: " + foundTimeToken);
+		        foundTimeToken = deriveDayFromWording(foundTimeToken);
+		        System.out.println("In CA: deriveDayFromWording, foundTimeToken value coming out is: " + foundTimeToken);
 		        
 		        if (weatherAttributeTokenCharacteristics.getString("role").equals("contingency")){
 
@@ -152,10 +169,57 @@ public class CouchbaseAccess extends HttpServlet
 		}
         
         if (foundTimeMatch && foundWeatherMatch){
-        	response.getWriter().write(latestPrediction);
+        	if (furtherResponsesRequired){
+        		response.getWriter().write(latestPrediction);
+        		furtherResponsesRequired = false;
+        	}
         } else {
-        	response.getWriter().write("Sorry, I didn't understand that.");
+        	if (furtherResponsesRequired){
+        		response.getWriter().write("Sorry, I didn't understand that.");
+        		furtherResponsesRequired = false;
+        	}
         }	
+	}
+	
+	// Changes the foundTimeToken to a day-name, in cases where it 
+	// was user-specified as a number of days in the future. Sounds better 
+	// when read back.
+	public String deriveDayFromWording(String aFoundTimeToken){
+		
+		System.out.println("In deriveDayFromWording - aFoundTimeToken is: " + aFoundTimeToken);
+		
+		DateCalculator myDateCalculator = new DateCalculator();
+		
+		if (aFoundTimeToken.contains("in 2 days time") || 
+				aFoundTimeToken.contains("2 days from now")){
+
+			aFoundTimeToken = myDateCalculator.futureDayOfTheWeekAsString(2);
+			
+			System.out.println("In CA, aFoundTimeToken for 2 days from now is: " + aFoundTimeToken);
+			
+	    } else {
+	    	
+	    	if (aFoundTimeToken.contains("in 3 days time") || 
+	    			aFoundTimeToken.contains("3 days from now")){
+	    		
+	    		aFoundTimeToken = myDateCalculator.futureDayOfTheWeekAsString(3);
+	    		
+				System.out.println("In CA, aFoundTimeToken for 3 days from now is: " + aFoundTimeToken);
+	    		
+	    	} else {
+	    		
+	    		if (aFoundTimeToken.contains("in 4 days time") || 
+	    				aFoundTimeToken.contains("4 days from now")){
+	    			
+	    			aFoundTimeToken = myDateCalculator.futureDayOfTheWeekAsString(4);
+	    			
+	    			System.out.println("In CA, aFoundTimeToken for 4 days from now is: " + aFoundTimeToken);
+	    			
+	    		} 
+	    	}
+	    }
+		
+		return aFoundTimeToken;
 	}
 	
 	public String deriveDateFromWording(String aFoundTimeToken){
@@ -174,6 +238,8 @@ public class CouchbaseAccess extends HttpServlet
 		
 	        if (aFoundTimeToken.contains("tomorrow")){
 	        	
+	        	System.out.println("Reached tomorrow passage.");
+	        	
 	        	if (aFoundTimeToken.contains("day after")){
 	        		
 	        		userSpecifiedDate = myDateCalculator.todaysDatePlusOffset(2);
@@ -184,7 +250,31 @@ public class CouchbaseAccess extends HttpServlet
 	        	}
 	        	
 	        	System.out.println("The user specified date is " + userSpecifiedDate);
-	        }
+	        
+	        } else {
+	        	
+	        	if (aFoundTimeToken.contains("2 days from now") || 
+	        			aFoundTimeToken.contains("in 2 days time")){
+	        		
+	        		userSpecifiedDate = myDateCalculator.todaysDatePlusOffset(2);
+	        		
+	        	} else {
+	        		
+	        		if (aFoundTimeToken.contains("3 days from now") || 
+	        				aFoundTimeToken.contains("in 3 days time")){
+	        			
+	        			userSpecifiedDate = myDateCalculator.todaysDatePlusOffset(3);
+	        			
+	        		} else {
+	        			
+	        			if (aFoundTimeToken.contains("4 days from now") || 
+	        					aFoundTimeToken.contains("in 4 days time")){
+	        				
+	        				userSpecifiedDate = myDateCalculator.todaysDatePlusOffset(4);        				
+	        			} 
+	        		}
+	        	}
+	        } 
 		}
 		
 		return userSpecifiedDate;

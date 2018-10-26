@@ -26,6 +26,11 @@ public class GetPpValues {
 	 */
 	public int getThePpValues(String theDateSpecifiedByTheUser, String startOfSpanPeriod, Bucket bucket) {
 		// Iterate over all five days' worth of data.
+		
+		System.out.println("In GetPpValues now.");
+		System.out.println("theDateSpecifiedByTheUser is: " + theDateSpecifiedByTheUser);
+		System.out.println("startOfSpanPeriod is: " + startOfSpanPeriod);
+		System.out.println("In GetPpValues now.");
         for (int y = 0; y <= 4; y++)
         {
     		N1qlQueryResult resultq = bucket.query(	  	

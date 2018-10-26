@@ -47,6 +47,14 @@ public class TimeMatcher {
 	 * value of the successfully matched key.
 	 */
 	public JsonArray MatchTime(String question, Cluster cluster, Bucket weatherAttributesBucket) {
+		
+		
+		
+		// First, determine whether the question contains day-names. Change these to the relative 
+		// values stored in cdb.
+		
+		question = applyRelativeTimeNamesToQuestionString(question);
+		
         N1qlQueryResult timeArrayLengthCalculationResult = weatherAttributesBucket.query(
         		  	
         	N1qlQuery.simple("SELECT ARRAY_COUNT(time_tokens) AS total_time_members FROM weatherAttributes")
@@ -83,7 +91,8 @@ public class TimeMatcher {
 				    while(iterator.hasNext()) 
 				    {
 				        String setKey = iterator.next();
-
+				        System.out.println("In time iterator: question is " + question);
+				        System.out.println("In time iterator: setKey is " + setKey);
 				        if (question.contains(setKey))
 				        {      	
 				        	foundMatch = true;
@@ -93,6 +102,7 @@ public class TimeMatcher {
 				        		foundTimeToken = setKey;				        		
 						        foundTimeSpanObject = innerJsonObject.getObject(setKey); 						        
 						        foundTimeKeyAndValue = JsonArray.from(foundTimeToken, foundTimeSpanObject);
+						        System.out.println("foundTimeKeyAndValue are: " + foundTimeKeyAndValue.toString());
 				        	}
 				        }
 			        }			  			        
@@ -104,5 +114,55 @@ public class TimeMatcher {
 	    }
         
         return foundTimeKeyAndValue;
+	}
+	
+	public String applyRelativeTimeNamesToQuestionString(String theQuestion){
+		
+		System.out.println("in applyRelativeNames");
+		
+		String userSpecifiedDayName = "";
+		
+		String[] myDaysOfTheWeekArray = {"Saturday", 
+				"Sunday", "Monday", "Tuesday", "Wednesday", 
+				"Thursday", "Friday"};
+		
+		for (int index = 0; index <= myDaysOfTheWeekArray.length -1; index++){
+			
+			if (theQuestion.contains(myDaysOfTheWeekArray[index])){
+				userSpecifiedDayName = myDaysOfTheWeekArray[index];
+				break;
+			}
+		}
+
+		DateCalculator myDateCalculator = new DateCalculator();
+		String todaysDayName = myDateCalculator.futureDayOfTheWeekAsString(0);
+			
+		int offsetOfFutureDay = myDateCalculator.offsetForFutureDayOfTheWeek(todaysDayName, 
+				userSpecifiedDayName);
+		
+		System.out.println("offsetOfFutureDay in TimeMatcher is set to: " + offsetOfFutureDay);
+		
+		switch(offsetOfFutureDay){
+			case(0):
+				theQuestion = theQuestion + "_" + "today";
+				break;
+			case(1):
+				theQuestion = theQuestion + "_" + "tomorrow";
+				break;
+			case(2):
+				theQuestion = theQuestion + "_" + "in_2_days_time";
+				break;
+			case(3):
+				theQuestion = theQuestion + "_" + "in_3_days_time";
+				break;
+			case(4):
+				theQuestion = theQuestion + "_" + "in_4_days_time";
+				break;
+			default:
+				
+		}
+		
+		return theQuestion;
+		
 	}
 }
