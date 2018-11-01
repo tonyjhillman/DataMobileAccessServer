@@ -118,6 +118,11 @@ public class TimeMatcher {
         return foundTimeKeyAndValue;
 	}
 	
+	// If the user-specified question contains day-names, such as 'Friday' or 
+	// 'Tuesday', convert them to relative names (such as 'today', or 'in 2 days 
+	// time", so that a match on them can be sought. Append the new value to the 
+	// existing question.
+	//
 	public String applyRelativeTimeNamesToQuestionString(String theQuestion){
 		
 		System.out.println("In TimeMatcher:applyRelativeNames: theQuestion received is: " + theQuestion);
@@ -128,6 +133,8 @@ public class TimeMatcher {
 				"Sunday", "Monday", "Tuesday", "Wednesday", 
 				"Thursday", "Friday"};
 		
+		// Find whether there is a day-name employed in the question.
+		//
 		for (int index = 0; index <= myDaysOfTheWeekArray.length -1; index++){
 			
 			if (theQuestion.contains(myDaysOfTheWeekArray[index])){
@@ -136,50 +143,57 @@ public class TimeMatcher {
 			}
 		}
 		
-		// FIX: AT THIS POINT, IF THE QUESTION PROVES NOT TO HAVE CONTAINED 
-		// A DAY NAME, WE SHOULD NOT CONTINUE WITH WHAT IS BELOW. RIGHT NOW,
-		// SPECIFYING THE WORD 'TOMORROW' RETURNS SOMETHING BOGUS, CZ THERE IS
-		// NO USER-SPECIFIED DAY NAME.
+		// If we have indeed found a day-name in the user-specified question, use the DateCalculator 
+		// to determine its relation to today: that is, how many days in advance it is.
+		//
+		if(!userSpecifiedDayName.equals("")){
+			
+			DateCalculator myDateCalculator = new DateCalculator();
+			System.out.println("In TimeMatcher:applyRelativeTimeNamesToQuestionString: calculating today's day name via MyDateCalculator:futureDayOfTheWeekAsString");
+			String todaysDayName = myDateCalculator.futureDayOfTheWeekAsString(0);
+			
+			System.out.println("In TimeMatcher:applyRelativeTimeNamesToQuestionString: todaysDayName is: " + todaysDayName);
+			System.out.println("In TimeMatcher:applyRelativeTimeNamesToQuestionString: userSpecifiedDayName is: " + userSpecifiedDayName);
+			
+			int offsetOfFutureDay = 0;
+			
+			// If the specified day-name is simply today's day-name, we know the offset is zero. Otherwise,
+			// use the DateCalculator to determine the offset.
+			//
+			if (todaysDayName.equals(userSpecifiedDayName) || userSpecifiedDayName.equals("")){	
+				offsetOfFutureDay = 0;
+			} else {
+				offsetOfFutureDay = myDateCalculator.offsetForFutureDayOfTheWeek(todaysDayName, userSpecifiedDayName);	
+			}
 
-		DateCalculator myDateCalculator = new DateCalculator();
-		System.out.println("In TimeMatcher:applyRelativeTimeNamesToQuestionString: calculating today's day name via MyDateCalculator:futureDayOfTheWeekAsString");
-		String todaysDayName = myDateCalculator.futureDayOfTheWeekAsString(0);
-		
-		System.out.println("In TimeMatcher:applyRelativeTimeNamesToQuestionString: todaysDayName is: " + todaysDayName);
-		System.out.println("In TimeMatcher:applyRelativeTimeNamesToQuestionString: userSpecifiedDayName is: " + userSpecifiedDayName);
-		
-		int offsetOfFutureDay = 0;
-		
-		if (todaysDayName.equals(userSpecifiedDayName) || userSpecifiedDayName.equals("")){	
-			offsetOfFutureDay = 0;
-		} else {
-			offsetOfFutureDay = myDateCalculator.offsetForFutureDayOfTheWeek(todaysDayName, userSpecifiedDayName);	
+			System.out.println("offsetOfFutureDay in TimeMatcher is set to: " + offsetOfFutureDay);
+			
+			// Using the offset, find the appropriate relative terminology for the user-specified day-name.
+			//
+			switch(offsetOfFutureDay){
+				case(0):
+					theQuestion = theQuestion + "_" + "today";
+					break;
+				case(1):
+					theQuestion = theQuestion + "_" + "tomorrow";
+					break;
+				case(2):
+					theQuestion = theQuestion + "_" + "in_2_days_time";
+					break;
+				case(3):
+					theQuestion = theQuestion + "_" + "in_3_days_time";
+					break;
+				case(4):
+					theQuestion = theQuestion + "_" + "in_4_days_time";
+					break;
+				default:
+					// Don't change the question.			
+			}
+
 		}
 
-		System.out.println("offsetOfFutureDay in TimeMatcher is set to: " + offsetOfFutureDay);
+		System.out.println("applyRelativeTimeNamesToQuestionString: theQuestion is: " + theQuestion);
 		
-		switch(offsetOfFutureDay){
-			case(0):
-				theQuestion = theQuestion + "_" + "today";
-				break;
-			case(1):
-				theQuestion = theQuestion + "_" + "tomorrow";
-				break;
-			case(2):
-				theQuestion = theQuestion + "_" + "in_2_days_time";
-				break;
-			case(3):
-				theQuestion = theQuestion + "_" + "in_3_days_time";
-				break;
-			case(4):
-				theQuestion = theQuestion + "_" + "in_4_days_time";
-				break;
-			default:
-				
-		}
-		
-		return theQuestion;
-		
-	}
-	
+		return theQuestion;	
+	}	
 }
