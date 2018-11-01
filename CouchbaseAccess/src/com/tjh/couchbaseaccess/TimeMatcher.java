@@ -53,7 +53,9 @@ public class TimeMatcher {
 		// First, determine whether the question contains day-names. Change these to the relative 
 		// values stored in cdb.
 		
+		System.out.println("In TimeMatcher:MatchTime: passing to applyRelativeTimeNamesToQuestionString, the question: " + question);
 		question = applyRelativeTimeNamesToQuestionString(question);
+		System.out.println("In TimeMatcher:MatchTime: returning fro applyRelativeTimeNamesToQuestionString, question becomes: " + question);
 		
         N1qlQueryResult timeArrayLengthCalculationResult = weatherAttributesBucket.query(
         		  	
@@ -118,7 +120,7 @@ public class TimeMatcher {
 	
 	public String applyRelativeTimeNamesToQuestionString(String theQuestion){
 		
-		System.out.println("in applyRelativeNames");
+		System.out.println("In TimeMatcher:applyRelativeNames: theQuestion received is: " + theQuestion);
 		
 		String userSpecifiedDayName = "";
 		
@@ -133,13 +135,27 @@ public class TimeMatcher {
 				break;
 			}
 		}
+		
+		// FIX: AT THIS POINT, IF THE QUESTION PROVES NOT TO HAVE CONTAINED 
+		// A DAY NAME, WE SHOULD NOT CONTINUE WITH WHAT IS BELOW. RIGHT NOW,
+		// SPECIFYING THE WORD 'TOMORROW' RETURNS SOMETHING BOGUS, CZ THERE IS
+		// NO USER-SPECIFIED DAY NAME.
 
 		DateCalculator myDateCalculator = new DateCalculator();
+		System.out.println("In TimeMatcher:applyRelativeTimeNamesToQuestionString: calculating today's day name via MyDateCalculator:futureDayOfTheWeekAsString");
 		String todaysDayName = myDateCalculator.futureDayOfTheWeekAsString(0);
-			
-		int offsetOfFutureDay = myDateCalculator.offsetForFutureDayOfTheWeek(todaysDayName, 
-				userSpecifiedDayName);
 		
+		System.out.println("In TimeMatcher:applyRelativeTimeNamesToQuestionString: todaysDayName is: " + todaysDayName);
+		System.out.println("In TimeMatcher:applyRelativeTimeNamesToQuestionString: userSpecifiedDayName is: " + userSpecifiedDayName);
+		
+		int offsetOfFutureDay = 0;
+		
+		if (todaysDayName.equals(userSpecifiedDayName) || userSpecifiedDayName.equals("")){	
+			offsetOfFutureDay = 0;
+		} else {
+			offsetOfFutureDay = myDateCalculator.offsetForFutureDayOfTheWeek(todaysDayName, userSpecifiedDayName);	
+		}
+
 		System.out.println("offsetOfFutureDay in TimeMatcher is set to: " + offsetOfFutureDay);
 		
 		switch(offsetOfFutureDay){
@@ -165,4 +181,5 @@ public class TimeMatcher {
 		return theQuestion;
 		
 	}
+	
 }

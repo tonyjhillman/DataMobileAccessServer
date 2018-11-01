@@ -19,6 +19,8 @@ public class DateCalculator {
 	 * 
 	 */
 	public String todaysDatePlusOffset(int offset) {
+		
+		//System.out.println("In DateCalculator:todaysDatePlusOffset: offset received is: " + offset);
 		String fullDate = "";
 		
 		Calendar calendar = Calendar.getInstance();       
@@ -57,11 +59,8 @@ public class DateCalculator {
 	
 	public int offsetForFutureDayOfTheWeek(String todaysDayName, String futureDaysName){
 		
-		
-		
-		System.out.println("In offsetForFutureDayOfTheWeek");
-		System.out.println("todaysDayName is " + todaysDayName);
-		System.out.println("futureDaysName is " + futureDaysName);
+		System.out.println("In DateCalculator: offsetForFutureDayOfTheWeek: todaysDayName received is: " + todaysDayName);
+		System.out.println("In DateCalculator: offsetForFutureDayOfTheWeek: futureDaysName received is: " + futureDaysName);
         
         int todaysOffset = getArrayPositionOfDayName(todaysDayName);
         int futureDaysOffset = getArrayPositionOfDayName(futureDaysName);
@@ -110,14 +109,17 @@ public class DateCalculator {
 	
 	
 	public String futureDayOfTheWeekAsString(int offset) {
+		
+		System.out.println("In DateCalculator: futureDayOfTheWeekAsString: offset receieved is: " + offset);
 		Calendar calendar = Calendar.getInstance();       
         Date date = new Date();
         calendar.setTime(date); 
-        calendar.add(Calendar.DATE, offset); // So we can access the array,
+        calendar.add(Calendar.DATE, offset + 1); // So we can access the array,
         										 // which counts from zero
         int myDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+        System.out.println("In DateCalculator: futureDayOfTheWeekAsString: myDayOfWeek therefore determined to be: " + myDayOfWeek);
         
-        String myDayOfWeekAsString = DaysOfTheWeekArray[myDayOfWeek];
+        String myDayOfWeekAsString = DaysOfTheWeekArray[myDayOfWeek -1];
 		
 		return myDayOfWeekAsString;
 	}

@@ -1,6 +1,8 @@
 package com.tjh.couchbaseaccess;
 
 public class Verbalizer {
+	
+	public Boolean toggle = false;
 
 	public Verbalizer() {
 		// TODO Auto-generated constructor stub
@@ -23,7 +25,15 @@ public class Verbalizer {
 					returnString = returnString + "Chances or rain are about even for";
 				} else {
 					if (highestPpValue > 59 && highestPpValue < 80) {
-						returnString = returnString + "Chances of rain are fairly high for";
+						
+						if ((highestPpValue % 2) == 0) {
+							returnString = returnString + "Chances of rain are fairly high for";
+							
+						} else {
+							returnString = returnString + "Rain is quite likely for";
+
+						}
+
 					} else {
 						returnString = returnString + "Rain is extremely likely for";
 					}

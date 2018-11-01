@@ -26,12 +26,13 @@ public class WeatherMatcher {
 	public WeatherMatcher() {
 	}
 	
-	public JsonArray MatchWeatherCondition(String question, Cluster cluster, Bucket weatherAttributesBucket) {		 
+	public JsonArray MatchWeatherCondition(String question, Cluster cluster, Bucket weatherAttributesBucket) {	
+		System.out.println("WeatherMatcher:MatchWeatherCondition: received question of: " + question);
         N1qlQueryResult arrayLengthCalculationResult = weatherAttributesBucket.query(       		 
         	N1qlQuery.simple("SELECT ARRAY_COUNT(attribute_tokens) AS total_members FROM weatherAttributes")
         );
         
-        System.out.println("Hello");
+        //System.out.println("Hello");
         
         Integer arrayLength = 0;
         String returnValue = "No match found";
@@ -67,9 +68,9 @@ public class WeatherMatcher {
 				        	
 				        	JsonObject weatherAttributeTokenCharacteristics = innerJsonObject.getObject(setKey);
 				        	Set<String> NewNameSet = weatherAttributeTokenCharacteristics.getNames();
-				        	System.out.println("...........name set is: " + NewNameSet.toString());
+				        	//System.out.println("...........name set is: " + NewNameSet.toString());
 				        	//JsonObject testObject = weatherAttributeTokenCharacteristics.getObject(setKey);
-				        	System.out.println("...........testObject is: " + weatherAttributeTokenCharacteristics.toString());
+				        	//System.out.println("...........testObject is: " + weatherAttributeTokenCharacteristics.toString());
 				        	
 				        	foundWeatherKeyAndValue = JsonArray.from(setKey, weatherAttributeTokenCharacteristics);
 				        	

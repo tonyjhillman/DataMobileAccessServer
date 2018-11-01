@@ -64,6 +64,7 @@ public class CouchbaseAccess extends HttpServlet
         bucket.bucketManager().createN1qlPrimaryIndex(true, false);
 
         questionParameterValue = request.getParameter("question");
+        System.out.println("CouchbaseAccess:doPost: questionParameter value is: " + questionParameterValue);
 
 		Bucket weatherAttributesBucket = cluster.openBucket("weatherAttributes");
 		
@@ -72,9 +73,12 @@ public class CouchbaseAccess extends HttpServlet
 		WeatherMatcher myWeatherMatcher = new WeatherMatcher();
 		//String weatherMatchResult = myWeatherMatcher.MatchWeatherCondition(questionParameterValue, cluster, weatherAttributesBucket);
 		
+		System.out.println("CouchbaseAccess:doPost: Passing questionParameterValue to WeatherMatcher class");
 		JsonArray retrievedWeatherTokenArray = myWeatherMatcher.MatchWeatherCondition(questionParameterValue, cluster, weatherAttributesBucket);
+		System.out.println("CouchbaseAccess:doPost: array received from WeatherMatcher is: " + retrievedWeatherTokenArray.toString());
 		
 		String weatherMatchResult = retrievedWeatherTokenArray.getString(0);
+		System.out.println("CouchbaseAccess:doPost: weatherMatchResult from retrievedWeatherTokenArray is: " + weatherMatchResult);
 		JsonObject weatherAttributeTokenCharacteristics = retrievedWeatherTokenArray.getObject(1);
 		
 		if (weatherMatchResult.equals("No match found")) {	
@@ -89,13 +93,15 @@ public class CouchbaseAccess extends HttpServlet
 			foundWeatherMatch = true;
 			furtherResponsesRequired = true;
 			
+			System.out.println("CouchbaseAccess:doPost: Passing questionParameterValue to TimeMatcher class, MatchTime method.");
 			TimeMatcher myTimeMatcher = new TimeMatcher();
 			JsonArray myJsonArray = myTimeMatcher.MatchTime(questionParameterValue, cluster, weatherAttributesBucket);
+			System.out.println("CouchbaseAccess:doPost: retrieved array from TimeMatch.MatchTime is: " + myJsonArray.toString());
 			
 			String foundTimeToken = myJsonArray.getString(0);
 			
 			if (foundTimeToken.equals("No match found")) {
-				response.getWriter().write("I didn't understand the time you gave me.");
+				response.getWriter().write("I didn't understand the time you gave me. I can see up to 4 days ahead.");
 				furtherResponsesRequired = false;
 				
 				// QUESTION: SHALL WE DEFAULT TO 'TODAY' AND CARRY ON?
@@ -190,11 +196,15 @@ public class CouchbaseAccess extends HttpServlet
 		
 		DateCalculator myDateCalculator = new DateCalculator();
 		
+		String originalFoundTimeToken = aFoundTimeToken;
+		
 		if (aFoundTimeToken.contains("in 2 days time") || 
 				aFoundTimeToken.contains("2 days from now")){
 
 			aFoundTimeToken = myDateCalculator.futureDayOfTheWeekAsString(2);
 			
+			aFoundTimeToken = augmentDayWithSegment(aFoundTimeToken, originalFoundTimeToken);
+
 			System.out.println("In CA, aFoundTimeToken for 2 days from now is: " + aFoundTimeToken);
 			
 	    } else {
@@ -204,6 +214,8 @@ public class CouchbaseAccess extends HttpServlet
 	    		
 	    		aFoundTimeToken = myDateCalculator.futureDayOfTheWeekAsString(3);
 	    		
+	    		aFoundTimeToken = augmentDayWithSegment(aFoundTimeToken, originalFoundTimeToken);
+	    		
 				System.out.println("In CA, aFoundTimeToken for 3 days from now is: " + aFoundTimeToken);
 	    		
 	    	} else {
@@ -212,6 +224,8 @@ public class CouchbaseAccess extends HttpServlet
 	    				aFoundTimeToken.contains("4 days from now")){
 	    			
 	    			aFoundTimeToken = myDateCalculator.futureDayOfTheWeekAsString(4);
+	    			
+	    			aFoundTimeToken = augmentDayWithSegment(aFoundTimeToken, originalFoundTimeToken);
 	    			
 	    			System.out.println("In CA, aFoundTimeToken for 4 days from now is: " + aFoundTimeToken);
 	    			
@@ -247,6 +261,7 @@ public class CouchbaseAccess extends HttpServlet
 	        	} else {
 	        		
 	        		userSpecifiedDate = myDateCalculator.todaysDatePlusOffset(1);
+	        		System.out.println("In pure tomorrow passage, the user specified date is " + userSpecifiedDate);
 	        	}
 	        	
 	        	System.out.println("The user specified date is " + userSpecifiedDate);
@@ -317,5 +332,36 @@ public class CouchbaseAccess extends HttpServlet
     	}
 		
 		return highestPpValueFound;
+	}
+	
+	private String augmentDayWithSegment(String theModifiedTimeToken, String theUnmodifiedTimeToken){
+		
+		if (theUnmodifiedTimeToken.contains("morning")){
+			
+			theModifiedTimeToken = theModifiedTimeToken + " " + "morning";
+			
+		} else { 
+			if (theUnmodifiedTimeToken.contains("afternoon")){
+				
+				theModifiedTimeToken = theModifiedTimeToken + " " + "afternoon";	
+				
+			} else {
+				
+				if (theUnmodifiedTimeToken.contains("evening")){
+					
+					theModifiedTimeToken = theModifiedTimeToken + " " + "evening";
+					
+				} else {
+					
+					if (theUnmodifiedTimeToken.contains("night")){
+						
+						theModifiedTimeToken = theModifiedTimeToken + " " + "night";
+						
+					}
+				}
+			}
+		}
+		
+		return theModifiedTimeToken;
 	}
 }
