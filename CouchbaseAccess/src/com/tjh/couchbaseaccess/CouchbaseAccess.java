@@ -37,6 +37,8 @@ public class CouchbaseAccess extends HttpServlet
 	public Boolean furtherResponsesRequired = true;
 	
 	public String questionParameterValue = "";
+	
+	public String contingencyMode = "";
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -81,6 +83,8 @@ public class CouchbaseAccess extends HttpServlet
 		System.out.println("CouchbaseAccess:doPost: weatherMatchResult from retrievedWeatherTokenArray is: " + weatherMatchResult);
 		JsonObject weatherAttributeTokenCharacteristics = retrievedWeatherTokenArray.getObject(1);
 		
+		
+		
 		if (weatherMatchResult.equals("No match found")) {	
         	response.getWriter().write("No weather match found.");
         	furtherResponsesRequired = false;
@@ -92,6 +96,16 @@ public class CouchbaseAccess extends HttpServlet
 		} else {
 			foundWeatherMatch = true;
 			furtherResponsesRequired = true;
+			
+			if (weatherAttributeTokenCharacteristics.getString("role").equals("contingency")){
+				if (weatherAttributeTokenCharacteristics.getString("mode").equals("take")){
+					contingencyMode = "take";
+				} else {
+					if (weatherAttributeTokenCharacteristics.getString("mode").equals("wear")){
+						contingencyMode = "wear";
+					}
+				}
+			}
 			
 			System.out.println("CouchbaseAccess:doPost: Passing questionParameterValue to TimeMatcher class, MatchTime method.");
 			TimeMatcher myTimeMatcher = new TimeMatcher();
@@ -140,7 +154,7 @@ public class CouchbaseAccess extends HttpServlet
 		        
 		        if (weatherAttributeTokenCharacteristics.getString("role").equals("contingency")){
 
-		        	String myContingencyAdvice = myVerbalizer.verbalizeDegreeOfNeedForContingencyItem(highestPpValueFound);
+		        	String myContingencyAdvice = myVerbalizer.verbalizeDegreeOfNeedForContingencyItem(highestPpValueFound, contingencyMode);
 		        	predictionRider = "";
 		        	predictionRider = predictionRider + myContingencyAdvice + weatherMatchResult; 	
 				}

@@ -52,7 +52,7 @@ public class Verbalizer {
 	 * Method to verbalize degree of need for contingency item.
 	 * 
 	 */
-	public String verbalizeDegreeOfNeedForContingencyItem(int highestPpValue) {
+	public String verbalizeDegreeOfNeedForContingencyItem(int highestPpValue, String contingencyMode) {
 		String returnString = "";
 		
 		if (highestPpValue < 20) {
@@ -62,12 +62,12 @@ public class Verbalizer {
 				returnString = returnString + " So you may need your ";
 			} else {
 				if (highestPpValue > 29 && highestPpValue < 60) {
-					returnString = returnString + " So you may want to take your ";
+					returnString = returnString + " So you may want to " + contingencyMode + " your ";
 				} else {
 					if (highestPpValue > 59 && highestPpValue < 80) {
-						returnString = returnString + " So you had better take your ";
+						returnString = returnString + " So yes, you had better " + contingencyMode + " your ";
 					} else {
-						returnString = returnString + " So you should definitely take your ";
+						returnString = returnString + " So you should definitely " + contingencyMode + " your ";
 					}
 				}
 			}
