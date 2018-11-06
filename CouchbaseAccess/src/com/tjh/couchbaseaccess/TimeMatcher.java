@@ -47,9 +47,7 @@ public class TimeMatcher {
 	 * value of the successfully matched key.
 	 */
 	public JsonArray MatchTime(String question, Cluster cluster, Bucket weatherAttributesBucket) {
-		
-		
-		
+
 		// First, determine whether the question contains day-names. Change these to the relative 
 		// values stored in cdb.
 		
